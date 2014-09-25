@@ -1,6 +1,38 @@
------------------------------------------------------------------------------------------
+local catchStack = {
+	n = 0,
+	push = function(self, item)
+		self.n = self.n + 1
+		self[self.n] = item
+	end,
+	pop = funciton(self)
+		local n = self.n
+		local item = self[n]
+		self[n] = nil
+		self.n = n - 1
+		return item
+	end
+}
+
+local function try(func, ...)
+	local returns = {pcall(func, ...)}
+	if returns[1] then
+		return select(2, table.unpack(returns))
+	else
+		catchStack:push({func = func, msg = returns[2], ...})
+	end
+end
+
+local function catch(func)
+	pcall(func, catchStack:pop())
+end
+
+local function safecall(func, ...)
+	return select(2, pcall(func, ...))
+end
+
+-------------------------------------------------------------------------------
 --	Get a sleep function...
------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 local sleep
 local loaded, lib = pcall(require, "posix")
 if loaded then
@@ -12,14 +44,14 @@ else
 			lib.select(nil, nil, sec)
 		end
 	else
-		loaded, lib = pcall(require, "ffi")
+		loaded, lib = pcall(require, "apr")
 		if loaded then
-			lib.cdef "unsigned int sleep(unsigned int seconds);"
-			sleep = lib.C.sleep
+			sleep = lib.sleep
 		else
-			loaded, lib = pcall(require, "apr")
+			loaded, lib = pcall(require, "ffi")
 			if loaded then
-				sleep = lib.sleep
+				lib.cdef "unsigned int sleep(unsigned int seconds);"
+				sleep = lib.C.sleep
 			elseif string.sub(package.config, 1, 1) == "\\" or os.getenv("WINDIR") then
 				if tonumber(io.popen("ver", "r"):read("*a"):match("%d%.%d")) > 5.0 then
 					sleep = function (sec)
@@ -42,12 +74,17 @@ else
 	end
 end
 
------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 --	Begin program
------------------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
 
 io.write "Made by HawkBlade\n"
 
 sleep(3)
 
 io.write "Would you like to open a game?\n"
+
+if string.lower(io.read "*a") == "yes" then
+	local f = io.open("a.txt", "r")
+	money, fields, soldiers, catapults, grass, wheat, barley, season, seasonchance = safecall(load("return " .. f:read "*a"))
+end
