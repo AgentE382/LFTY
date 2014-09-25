@@ -4,7 +4,7 @@ local catchStack = {
 		self.n = self.n + 1
 		self[self.n] = item
 	end,
-	pop = funciton(self)
+	pop = function(self)
 		local n = self.n
 		local item = self[n]
 		self[n] = nil
@@ -84,7 +84,7 @@ sleep(3)
 
 io.write "Would you like to open a game?\n"
 
-if string.lower(io.read "*a") == "yes" then
+if string.lower(io.read "*l") == "yes" then
 	local f = io.open("a.txt", "r")
 	money, fields, soldiers, catapults, grass, wheat, barley, season, seasonchance = safecall(load("return " .. f:read "*a"))
 end
