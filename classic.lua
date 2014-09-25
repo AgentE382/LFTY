@@ -13,17 +13,30 @@ local catchStack = {
 	end
 }
 
+safenil = {}
+safenil_mt = {
+	__tostring = function() return "" end,
+	__concat = function(op1, op2) return tostring(op1) or "" .. tostring(op2) or "" end,
+	__tonumber = function() return 0 end,
+	__metatable = safenil
+}
+setmetatable(safenil, safenil_mt)
+
 local function try(func, ...)
 	local returns = {pcall(func, ...)}
 	if returns[1] then
 		return select(2, table.unpack(returns))
 	else
 		catchStack:push({func = func, msg = returns[2], ...})
+		return safenil
 	end
 end
 
 local function catch(func)
-	pcall(func, catchStack:pop())
+	local e = catchStack:pop()
+	if e then
+		pcall(func, e)
+	end
 end
 
 local function safecall(func, ...)
@@ -86,5 +99,6 @@ io.write "Would you like to open a game?\n"
 
 if string.lower(io.read "*l") == "yes" then
 	local f = io.open("a.txt", "r")
-	money, fields, soldiers, catapults, grass, wheat, barley, season, seasonchance = safecall(load("return " .. f:read "*a"))
+	money, fields, soldiers, catapults, grass, wheat, barley, season, seasonchance = safecall(load("return " .. try(function() return f:read "*a" end)))
+	catch(function(e) print("Failed to load game: ", e.msg) end)
 end
